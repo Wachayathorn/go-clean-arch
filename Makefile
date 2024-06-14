@@ -145,3 +145,8 @@ clean-artifacts: ## Removes Artifacts (*.out)
 
 clean-docker: ## Removes dangling docker images
 	@ docker image prune -f
+
+run-dev:
+	go vet ./...
+	swag init
+	go run ./main.go
