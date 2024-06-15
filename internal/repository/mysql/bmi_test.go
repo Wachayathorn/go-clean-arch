@@ -50,9 +50,24 @@ func Test_bmi_Get(t *testing.T) {
 		expectedBmis := []domain.BmiRepository{
 			{ID: 1, Name: "name", Weight: "70.0", Height: "175", Bmi: "22.86", CreatedAt: nil, UpdatedAt: nil},
 		}
+
+		mock.ExpectPrepare("SELECT id, name, weight, height, bmi, created_at, updated_at FROM bmi")
+
 		rows := sqlmock.NewRows([]string{"id", "name", "weight", "height", "bmi", "created_at", "updated_at"}).
 			AddRow(expectedBmis[0].ID, expectedBmis[0].Name, expectedBmis[0].Weight, expectedBmis[0].Height, expectedBmis[0].Bmi, nil, nil)
-		mock.ExpectQuery("SELECT * FROM bmi").WillReturnRows(rows)
+		mock.ExpectQuery("SELECT id, name, weight, height, bmi, created_at, updated_at FROM bmi").
+			WillReturnRows(rows)
+
+		getStmt, err := db.Prepare("SELECT id, name, weight, height, bmi, created_at, updated_at FROM bmi")
+		assert.NoError(t, err)
+
+		bmiRepo := &bmi{getStmt: getStmt}
+
+		actualBmis, err := bmiRepo.Get(context.Background())
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBmis, actualBmis)
+		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }
 
@@ -65,9 +80,25 @@ func Test_bmi_GetByID(t *testing.T) {
 		expectedBmis := []domain.BmiRepository{
 			{ID: 1, Name: "name", Weight: "70.0", Height: "175", Bmi: "22.86"},
 		}
+
+		mock.ExpectPrepare("SELECT id, name, weight, height, bmi, created_at, updated_at FROM bmi WHERE id = ?")
+
 		rows := sqlmock.NewRows([]string{"id", "name", "weight", "height", "bmi", "created_at", "updated_at"}).
 			AddRow(expectedBmis[0].ID, expectedBmis[0].Name, expectedBmis[0].Weight, expectedBmis[0].Height, expectedBmis[0].Bmi, nil, nil)
-		mock.ExpectQuery(getBmisByIDSql).WillReturnRows(rows)
+		mock.ExpectQuery("SELECT id, name, weight, height, bmi, created_at, updated_at FROM bmi WHERE id = ?").
+			WithArgs(1).
+			WillReturnRows(rows)
+
+		getByIDStmt, err := db.Prepare("SELECT id, name, weight, height, bmi, created_at, updated_at FROM bmi WHERE id = ?")
+		assert.NoError(t, err)
+
+		bmiRepo := &bmi{getByIDStmt: getByIDStmt}
+
+		actualBmis, err := bmiRepo.GetByID(context.Background(), 1)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBmis[0], actualBmis)
+		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }
 
